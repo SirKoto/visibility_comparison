@@ -12,6 +12,7 @@ set(SRC_FILES
     src/main.cpp
     src/Mesh.cpp    src/Mesh.hpp
     src/Args.cpp    src/Args.hpp
+    src/chcpp.cpp   src/chcpp.hpp
     src/testAABBoxInFrustum.h
     src/glad.c
 )

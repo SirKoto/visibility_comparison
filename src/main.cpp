@@ -12,6 +12,7 @@
 #include "Mesh.hpp"
 #include "Args.hpp"
 #include "testAABBoxInFrustum.h"
+#include "chcpp.hpp"
 
 
 constexpr const char* MESH_TO_LOAD = "./models/Armadillo.ply";
@@ -49,7 +50,8 @@ uint32_t g_currentBuffer = 0;
 enum Mode {
     eUnoptimized = 0,
     eFrustumCulling = 1,
-    eOcclusionCulling = 2
+    eOcclusionCulling = 2,
+    eCHC = 3
 };
 
 Mode g_mode = Mode::eUnoptimized;
@@ -362,6 +364,12 @@ int mainLoop() {
         glGenQueries(g_gridPositions.size(), g_queryObjects[1].data());
         g_occlusionCullingPos.reserve(g_gridPositions.size());
     }
+    if(g_mode == Mode::eCHC) {
+        ChcPP chc;
+        chc.setMesh(g_mesh);
+        chc.setPositions(&g_gridPositions);
+        chc.buildBVH();
+    }
 
     g_startTime = glfwGetTime();
     g_actualTime = g_startTime;
@@ -431,7 +439,7 @@ void printUsage(){
         "\t\t 0 is without optimizations\n"
         "\t\t 1 is frustum culling\n"
         "\t\t 2 is occlusion culling\n"
-
+        "\t\t 3 is CHC++\n"
         "\toutfile = output file for framerate (optional)\n"
           <<       std::endl;
 }
