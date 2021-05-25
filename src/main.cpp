@@ -43,6 +43,7 @@ double g_actualTime = 0.0;
 glm::mat4 g_currentViewMatrix(1);
 glm::mat4 g_currentProjMatrix(1);
 glm::mat4 g_currentViewProjMatrix(1);
+glm::vec3 g_cameraPosition;
 
 std::array<std::vector<uint32_t>, 2> g_queryObjects;
 uint32_t g_currentBuffer = 0;
@@ -280,9 +281,9 @@ void updateCamera(){
                                  g_mesh->getSize().y / 2.f,
                                  g_gridResoulution / 2.0);
 
-    glm::vec3 eye = evalBSpline(dirPoints, u) * glm::vec3(g_gridResoulution, g_mesh->getSize().y , g_gridResoulution);
+    g_cameraPosition = evalBSpline(dirPoints, u) * glm::vec3(g_gridResoulution, g_mesh->getSize().y , g_gridResoulution);
 
-    g_currentViewMatrix = glm::lookAt(glm::vec3(eye),
+    g_currentViewMatrix = glm::lookAt(g_cameraPosition,
                                  center,
                                  glm::vec3(0,1,0));
 
@@ -411,7 +412,7 @@ int mainLoop() {
 
             break;
         case Mode::eCHC:
-            chc.drawBoxesAtDepth(3);
+            chc.executeCHCPP(g_cameraPosition, g_currentViewProjMatrix);
             break;
         default:
             assert(false);

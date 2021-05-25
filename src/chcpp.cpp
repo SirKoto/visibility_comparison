@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <glad/glad.h>
 
+#include "testAABBoxInFrustum.h"
+
 void ChcPP::buildBVH()
 {
     assert(mMesh != nullptr && mPositions != nullptr);
@@ -88,6 +90,149 @@ void ChcPP::drawBoxesAtDepth(uint32_t depth)
     drawBoxesAtDepthIntern(0, depth, mRoot.get());
 }
 
+void ChcPP::executeCHCPP(const glm::vec3 &cameraPosition, const glm::mat4 &cameraMatrix)
+{
+    // we asume that all the queues are already empty
+
+    pushToDistanceQueue(cameraPosition, mRoot.get());
+
+    while(!distanceQueue.empty() || !queryQueue.empty()) {
+        while(!queryQueue.empty()) {
+            if(isQueryFinished(queryQueue.front())) {
+                BVH_Node* node = queryQueue.front();
+                queryQueue.pop();
+                handleReturnedQuery(cameraPosition, node);
+            } else if(!v_queue.empty()){
+                assert(!v_queue.empty());
+                issueQuery(v_queue.front());
+                v_queue.pop();
+            }
+        } // end while !queryQueue.empty()
+
+        if(!distanceQueue.empty()) {
+            BVH_Node* node = distanceQueue.top().first;
+            distanceQueue.pop();
+            if(testAABBoxInFrustum(node->getBBox().min(), node->getBBox().max(), cameraMatrix)) {
+                // if not was visible...
+                if(!node->isVisible()) {
+                    queryPreviouslyInvisibleNode(node);
+                } else {
+                    if(node->isLeaf()) { //TODO: query reasonable
+                        v_queue.push(node);
+                    }
+                    traverseNode(cameraPosition, node);
+                }
+            }
+        }
+
+        if(distanceQueue.empty()) {
+            issueMultiQueries();
+        }
+
+    } // end while !distanceQueue.empty() || !queryQueue.empty()
+
+    while(!v_queue.empty()) {
+        issueQuery(v_queue.front());
+        v_queue.pop();
+    }
+}
+
+void ChcPP::traverseNode(const glm::vec3 &cameraPosition, BVH_Node *node)
+{
+    if(node->isLeaf()){
+        mMesh->drawOnlyInstance(node->getPrimitive());
+    } else {
+        pushToDistanceQueue(cameraPosition, node);
+        node->setVisible(false);
+    }
+}
+
+void ChcPP::pushToDistanceQueue(const glm::vec3 &cameraPosition, BVH_Node *node)
+{
+    glm::vec3 centerToCamera = cameraPosition - node->getBBox().center();
+    float_t d = glm::dot(centerToCamera, centerToCamera);
+    distanceQueue.push({node, d});
+}
+
+void ChcPP::pullUpVisibility(BVH_Node *node)
+{
+    while (node != nullptr && !node->isVisible()) {
+        node->setVisible(true);
+        node = node->getParent();
+    }
+}
+
+void ChcPP::queryIndividualNodes(BVH_Node *node)
+{
+    if(node->isLeaf()) {
+        issueQuery(node);
+    } else {
+        queryIndividualNodes(node->getChild0());
+        queryIndividualNodes(node->getChild1());
+    }
+}
+
+void ChcPP::issueQuery(BVH_Node *node)
+{
+    glBeginQuery(GL_ANY_SAMPLES_PASSED_CONSERVATIVE, node->getQuery());
+    if(node->isLeaf()){
+        mMesh->drawBBoxOnlyInstance(node->getPrimitive());
+    } else {
+        node->draw();
+    }
+    glEndQuery(GL_ANY_SAMPLES_PASSED_CONSERVATIVE);
+
+    // TODO: enable disable drawing
+    queryQueue.push(node);
+}
+
+bool ChcPP::isQueryFinished(BVH_Node *node)
+{
+    int32_t res;
+    glGetQueryObjectiv(node->getQuery(), GL_QUERY_RESULT_AVAILABLE, &res);
+    return res != 0;
+}
+
+void ChcPP::issueMultiQueries()
+{
+    while(!i_queue.empty()) {
+        issueQuery(i_queue.front());
+        i_queue.pop();
+    }
+}
+
+void ChcPP::queryPreviouslyInvisibleNode(BVH_Node *node)
+{
+    i_queue.push(node);
+
+    if(i_queue.size() >= MAX_BATCH_SIZE) {
+        issueMultiQueries();
+    }
+}
+
+void ChcPP::handleReturnedQuery(const glm::vec3 &cameraPosition, BVH_Node *node)
+{
+    uint32_t query = node->getQuery();
+    uint32_t samplePassed;
+    glGetQueryObjectuiv(query, GL_QUERY_RESULT, &samplePassed);
+
+    if(samplePassed) {
+        // if node.size() > 1
+        if(!node->isLeaf()) {
+            // query individual nodes. Multiquery failed
+            queryIndividualNodes(node);
+        } else {
+            if(!node->isVisible()) {
+                traverseNode(cameraPosition, node);
+            }
+            pullUpVisibility(node);
+        }
+    } else{
+        node->setVisible(false);
+    }
+
+}
+
 void AABBox::reset()
 {
     mMin =  std::numeric_limits<decltype(mMin)>::infinity();
@@ -108,6 +253,7 @@ BVH_Node::BVH_Node()
     glGenVertexArrays(1, &mVAO);
     glGenBuffers(1, &mVBO);
     glGenBuffers(1, &mVBOI);
+    glGenQueries(1, &mQuery);
 }
 
 void BVH_Node::initLeaf(uint32_t primitive, const AABBox &box)
@@ -128,6 +274,9 @@ void BVH_Node::initInterior(uint32_t axis, std::unique_ptr<BVH_Node>&& n0, std::
     mPrimitives.insert(mPrimitives.end(), mChildren[1]->mPrimitives.begin(), mChildren[1]->mPrimitives.end());
 
     std::sort(mPrimitives.begin(), mPrimitives.end());
+
+    mChildren[0]->mParent = this;
+    mChildren[1]->mParent = this;
 }
 
 void BVH_Node::createBBoxVAO(const Mesh *mesh)
