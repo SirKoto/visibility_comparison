@@ -137,15 +137,15 @@ void Mesh::loadMesh(const char* fileName) {
     glBindVertexArray(0);
 
     createObjectMatrix();
-    createBBoxVAO();
+    createBBoxVAO(mBBVAO, mBBVBO, mBBInstanceBO, mMinBB, mMaxBB);
 
 }
 
-void Mesh::createBBoxVAO()
+void Mesh::createBBoxVAO(uint32_t vao, uint32_t vbo, uint32_t vboInstancing, glm::vec3 min, glm::vec3 max)
 {
-    glBindVertexArray(mBBVAO);
-  // vertices
-  float vertices[] = {
+    glBindVertexArray(vao);
+    // vertices
+    float vertices[] = {
         0.0f, 0.0f, 0.0f,
         1.0f, 0.0f, 0.0f,
         1.0f, 1.0f, 0.0f,
@@ -187,19 +187,19 @@ void Mesh::createBBoxVAO()
         1.0f, 1.0f, 1.0f,
         0.0f, 1.0f, 1.0f,
         0.0f, 1.0f, 0.0f,
-      };
+    };
 
     for(uint32_t i = 0; i < 36; ++i) {
         glm::vec3 v(vertices[i * 3 + 0], vertices[i * 3 + 1], vertices[i * 3 + 2]);
 
-        v = mMinBB + v * (mMaxBB - mMinBB);
+        v = min + v * (max - min);
 
         vertices[i * 3 + 0] = v.x;
         vertices[i * 3 + 1] = v.y;
         vertices[i * 3 + 2] = v.z;
     }
 
-    glBindBuffer(GL_ARRAY_BUFFER, mBBVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER,
                sizeof(vertices),
                vertices,
@@ -215,7 +215,7 @@ void Mesh::createBBoxVAO()
                         0
                         );
 
-    glBindBuffer(GL_ARRAY_BUFFER, mBBInstanceBO);
+    glBindBuffer(GL_ARRAY_BUFFER, vboInstancing);
     glm::vec2 tmp(0.0f);
     glBufferData(GL_ARRAY_BUFFER,
               sizeof(tmp),
@@ -289,6 +289,13 @@ void Mesh::setBBInstances(const std::vector<glm::vec2> &xzOffsets)
     glBindVertexArray(0);
 }
 
+void Mesh::createBBoxVAOModelTransform(uint32_t vao, uint32_t vbo, uint32_t vboInstancing, glm::vec3 min, glm::vec3 max) const
+{
+    min = glm::vec3(mObjectMatrixInverse * glm::vec4(min, 1));
+    max = glm::vec3(mObjectMatrixInverse * glm::vec4(max, 1));
+    createBBoxVAO(vao, vbo, vboInstancing, min, max);
+}
+
 void Mesh::createObjectMatrix()
 {
     mObjectMatrix = glm::mat4(1.f);
@@ -298,4 +305,6 @@ void Mesh::createObjectMatrix()
     mObjectMatrix = glm::scale(mObjectMatrix, glm::vec3(0.9f));
     mObjectMatrix = glm::scale(mObjectMatrix, glm::vec3(scaleFactor));
     mObjectMatrix = glm::translate(mObjectMatrix, -mMinBB);
+
+    mObjectMatrixInverse = glm::inverse(mObjectMatrix);
 }

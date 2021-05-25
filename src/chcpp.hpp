@@ -21,6 +21,8 @@ public:
 
     void buildBVH();
 
+    void drawBoxesAtDepth(uint32_t depth);
+
 private:
 
     const Mesh *mMesh = nullptr;
@@ -50,13 +52,20 @@ public:
     BVH_Node();
     void initLeaf(uint32_t primitive, const AABBox& box);
     void initInterior(uint32_t axis, std::unique_ptr<BVH_Node>&& n0, std::unique_ptr<BVH_Node>&& n1);
-
+    void createBBoxVAO(const Mesh* mesh);
     bool isLeaf() const { return mChildren[0] == nullptr; }
+    BVH_Node* getChild0() { return mChildren[0].get(); }
+    BVH_Node* getChild1() { return mChildren[1].get(); }
+    const BVH_Node* getChild0() const { return mChildren[0].get(); }
+    const BVH_Node* getChild1() const { return mChildren[1].get(); }
+    void draw() const;
 private:
     AABBox mBox;
     std::array<std::unique_ptr<BVH_Node>, 2> mChildren;
     uint32_t mSplitAxis;
     std::vector<uint32_t> mPrimitives;
+
+    uint32_t mVAO, mVBO, mVBOI;
 };
 
 #endif // CHCPP_HPP

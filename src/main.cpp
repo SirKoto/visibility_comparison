@@ -364,8 +364,9 @@ int mainLoop() {
         glGenQueries(g_gridPositions.size(), g_queryObjects[1].data());
         g_occlusionCullingPos.reserve(g_gridPositions.size());
     }
+
+    ChcPP chc;
     if(g_mode == Mode::eCHC) {
-        ChcPP chc;
         chc.setMesh(g_mesh);
         chc.setPositions(&g_gridPositions);
         chc.buildBVH();
@@ -408,6 +409,9 @@ int mainLoop() {
                 g_mesh->drawOnlyInstance(g_occlusionCullingPos[i]);
             }
 
+            break;
+        case Mode::eCHC:
+            chc.drawBoxesAtDepth(3);
             break;
         default:
             assert(false);

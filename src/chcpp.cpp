@@ -3,6 +3,7 @@
 #include <limits>
 #include <math.h>
 #include <algorithm>
+#include <glad/glad.h>
 
 void ChcPP::buildBVH()
 {
@@ -36,6 +37,7 @@ void ChcPP::buildBVH()
                         newNode->initInterior(mergingX,
                                              std::move(nodes[i * yRes + j]),
                                              std::move(nodes[(1 + i) * yRes + j]));
+                        newNode->createBBoxVAO(mMesh);
                     }
                 } else {
                     if(j + 1 == yRes) {
@@ -44,6 +46,7 @@ void ChcPP::buildBVH()
                         newNode->initInterior(mergingX,
                                              std::move(nodes[i * yRes + j]),
                                              std::move(nodes[i * yRes + j + 1]));
+                        newNode->createBBoxVAO(mMesh);
                     }
                 }
                 nodesNext.push_back(std::move(newNode));
@@ -65,6 +68,26 @@ void ChcPP::buildBVH()
     mRoot = std::move(nodes.front());
 }
 
+void drawBoxesAtDepthIntern(uint32_t actualD, uint32_t maxD, const BVH_Node* node) {
+    if(node->isLeaf() || actualD > maxD){
+        return;
+    }
+
+    if(actualD == maxD) {
+        node->draw();
+        return;
+    }
+
+    drawBoxesAtDepthIntern(actualD + 1, maxD, node->getChild0());
+    drawBoxesAtDepthIntern(actualD + 1, maxD, node->getChild1());
+
+}
+
+void ChcPP::drawBoxesAtDepth(uint32_t depth)
+{
+    drawBoxesAtDepthIntern(0, depth, mRoot.get());
+}
+
 void AABBox::reset()
 {
     mMin =  std::numeric_limits<decltype(mMin)>::infinity();
@@ -82,6 +105,9 @@ AABBox AABBox::operator+(const AABBox &o) const
 BVH_Node::BVH_Node()
 {
     mChildren = {nullptr, nullptr};
+    glGenVertexArrays(1, &mVAO);
+    glGenBuffers(1, &mVBO);
+    glGenBuffers(1, &mVBOI);
 }
 
 void BVH_Node::initLeaf(uint32_t primitive, const AABBox &box)
@@ -102,4 +128,18 @@ void BVH_Node::initInterior(uint32_t axis, std::unique_ptr<BVH_Node>&& n0, std::
     mPrimitives.insert(mPrimitives.end(), mChildren[1]->mPrimitives.begin(), mChildren[1]->mPrimitives.end());
 
     std::sort(mPrimitives.begin(), mPrimitives.end());
+}
+
+void BVH_Node::createBBoxVAO(const Mesh *mesh)
+{
+    mesh->createBBoxVAOModelTransform(mVAO, mVBO, mVBOI, mBox.min(), mBox.max());
+}
+
+void BVH_Node::draw() const
+{
+    glBindVertexArray(this->mVAO);
+
+    glDrawArraysInstanced(GL_TRIANGLES, 0, 36, 1);
+
+    glBindVertexArray(0);
 }
