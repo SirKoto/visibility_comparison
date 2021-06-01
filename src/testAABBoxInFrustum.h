@@ -8,7 +8,8 @@
 inline bool testAABBoxInFrustum(const glm::vec3& min, const glm::vec3& max, const glm::mat4& MVP) {
 
     uint32_t posX = 0, negX = 0,
-             posY = 0, negY = 0;
+             posY = 0, negY = 0,
+             negZ = 0;
 
     bool inZ = true;
 
@@ -26,7 +27,7 @@ inline bool testAABBoxInFrustum(const glm::vec3& min, const glm::vec3& max, cons
         negX += corner.x < -corner.w ? 1 : 0;
         posY += corner.y >  corner.w ? 1 : 0;
         negY += corner.y < -corner.w ? 1 : 0;
-
+        negZ += corner.z < 0 ? 1 : 0;
 
         bool inZ_ = corner.z <= corner.w && corner.z >= 0;
         inZ &= inZ_;
@@ -40,10 +41,10 @@ inline bool testAABBoxInFrustum(const glm::vec3& min, const glm::vec3& max, cons
         }
     }
 
-    if(inZ && posX && negX && (posY != 8 && posY != 8)) {
+    if((inZ || (negZ != 0 && negZ != 8)) && posX && negX && (posY != 8 && posY != 8)) {
         return true;
     }
-    if(inZ && posY && negY && (posX != 8 && posX != 8)) {
+    if((inZ || (negZ != 0 && negZ != 8)) && posY && negY && (posX != 8 && posX != 8)) {
         return true;
     }
 

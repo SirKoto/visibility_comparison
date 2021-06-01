@@ -92,6 +92,7 @@ void ChcPP::drawBoxesAtDepth(uint32_t depth)
 
 void ChcPP::executeCHCPP(const glm::vec3 &cameraPosition, const glm::mat4 &cameraMatrix)
 {
+    flipVisibilityNodes(mRoot.get());
     // we asume that all the queues are already empty
     pushToDistanceQueue(cameraPosition, mRoot.get());
 
@@ -116,7 +117,7 @@ void ChcPP::executeCHCPP(const glm::vec3 &cameraPosition, const glm::mat4 &camer
             distanceQueue.pop();
             if(testAABBoxInFrustum(node->getBBox().min(), node->getBBox().max(), cameraMatrix)) {
                 // if not was visible...
-                if(!node->isVisible()) {
+                if(!node->wasVisible()) {
                     queryPreviouslyInvisibleNode(node);
                 } else {
                     if(node->isLeaf()) { //TODO: query reasonable
@@ -145,7 +146,7 @@ void ChcPP::executeCHCPP(const glm::vec3 &cameraPosition, const glm::mat4 &camer
         mMesh->drawOnlyInstance(i);
     }
     mRenderQueue.clear();
-    glFinish();
+    //glFinish();
 }
 
 void ChcPP::traverseNode(const glm::vec3 &cameraPosition, BVH_Node *node)
@@ -198,8 +199,8 @@ void ChcPP::issueQuery(BVH_Node *node)
 
 bool ChcPP::isQueryFinished(BVH_Node *node)
 {
-    int32_t res;
-    glGetQueryObjectiv(node->getQuery(), GL_QUERY_RESULT_AVAILABLE, &res);
+    uint32_t res;
+    glGetQueryObjectuiv(node->getQuery(), GL_QUERY_RESULT_AVAILABLE, &res);
     return res != 0;
 }
 
@@ -221,6 +222,16 @@ void ChcPP::queryPreviouslyInvisibleNode(BVH_Node *node)
     }
 }
 
+void ChcPP::flipVisibilityNodes(BVH_Node *node)
+{
+    node->propagateVisible();
+
+    if(!node->isLeaf()) {
+        flipVisibilityNodes(node->getChild0());
+        flipVisibilityNodes(node->getChild1());
+    }
+}
+
 void ChcPP::handleReturnedQuery(const glm::vec3 &cameraPosition, BVH_Node *node)
 {
     uint32_t query = node->getQuery();
@@ -233,7 +244,7 @@ void ChcPP::handleReturnedQuery(const glm::vec3 &cameraPosition, BVH_Node *node)
             // query individual nodes. Multiquery failed
             queryIndividualNodes(node);
         } else {
-            if(!node->isVisible()) {
+            if(!node->wasVisible()) {
                 traverseNode(cameraPosition, node);
             }
             pullUpVisibility(node);

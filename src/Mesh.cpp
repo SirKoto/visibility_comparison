@@ -14,7 +14,6 @@ Mesh::Mesh()
 
     glGenVertexArrays(1, &mBBVAO);
     glGenBuffers(1, &mBBVBO);
-    glGenBuffers(1, &mBBInstanceBO);
 }
 
 Mesh::~Mesh()
@@ -25,7 +24,6 @@ Mesh::~Mesh()
     glDeleteVertexArrays(1, &mVAO);
 
     glDeleteBuffers(1, &mBBVBO);
-    glDeleteBuffers(1, &mBBInstanceBO);
     glDeleteVertexArrays(1, &mBBVAO);
 }
 
@@ -137,11 +135,11 @@ void Mesh::loadMesh(const char* fileName) {
     glBindVertexArray(0);
 
     createObjectMatrix();
-    createBBoxVAO(mBBVAO, mBBVBO, mBBInstanceBO, mMinBB, mMaxBB);
+    createBBoxVAO(mBBVAO, mBBVBO, mInstanceBO, mMinBB, mMaxBB, false);
 
 }
 
-void Mesh::createBBoxVAO(uint32_t vao, uint32_t vbo, uint32_t vboInstancing, glm::vec3 min, glm::vec3 max)
+void Mesh::createBBoxVAO(uint32_t vao, uint32_t vbo, uint32_t vboInstancing, glm::vec3 min, glm::vec3 max, bool initializeVboInstancing)
 {
     glBindVertexArray(vao);
     // vertices
@@ -216,11 +214,15 @@ void Mesh::createBBoxVAO(uint32_t vao, uint32_t vbo, uint32_t vboInstancing, glm
                         );
 
     glBindBuffer(GL_ARRAY_BUFFER, vboInstancing);
-    glm::vec2 tmp(0.0f);
-    glBufferData(GL_ARRAY_BUFFER,
-              sizeof(tmp),
-              &tmp.x,
-              GL_STATIC_DRAW);
+    if(initializeVboInstancing) {
+        glm::vec2 tmp(0.0f);
+        glBufferData(GL_ARRAY_BUFFER,
+                     sizeof(tmp),
+                     &tmp.x,
+                     GL_STATIC_DRAW
+                     );
+    }
+
     glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), (void*)0);
 
     glEnableVertexAttribArray(3);
@@ -277,23 +279,14 @@ void Mesh::setInstances(const std::vector<glm::vec2> &xzOffsets)
 
 }
 
-void Mesh::setBBInstances(const std::vector<glm::vec2> &xzOffsets)
-{
-    glBindVertexArray(mBBVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, mBBInstanceBO);
-    glBufferData(GL_ARRAY_BUFFER,
-                sizeof(glm::vec2) * xzOffsets.size(),
-                xzOffsets.data(),
-                GL_STATIC_DRAW);
-
-    glBindVertexArray(0);
-}
-
-void Mesh::createBBoxVAOModelTransform(uint32_t vao, uint32_t vbo, uint32_t vboInstancing, glm::vec3 min, glm::vec3 max) const
+void Mesh::createBBoxVAOModelTransform(uint32_t vao,
+                                       uint32_t vbo,
+                                       uint32_t vboInstancing,
+                                       glm::vec3 min, glm::vec3 max) const
 {
     min = glm::vec3(mObjectMatrixInverse * glm::vec4(min, 1));
     max = glm::vec3(mObjectMatrixInverse * glm::vec4(max, 1));
-    createBBoxVAO(vao, vbo, vboInstancing, min, max);
+    createBBoxVAO(vao, vbo, vboInstancing, min, max, true);
 }
 
 void Mesh::createObjectMatrix()

@@ -58,6 +58,7 @@ private:
     bool isQueryFinished(BVH_Node* node);
     void issueMultiQueries();
     void queryPreviouslyInvisibleNode(BVH_Node* node);
+    void flipVisibilityNodes(BVH_Node* node);
 
     static constexpr uint32_t MAX_BATCH_SIZE = 4;
 };
@@ -93,8 +94,11 @@ public:
     BVH_Node* getParent() const { return mParent; }
 
     const AABBox& getBBox() const { return mBox; }
-    const bool isVisible() { return mIsVisible; }
+    const bool wasVisible() const {return mWasVisible; }
+    const bool isVisible() const { return mIsVisible; }
     void setVisible(bool visible) { mIsVisible = visible; }
+
+    void propagateVisible() { mWasVisible = mIsVisible; mIsVisible = false; }
 
     void draw() const;
     uint32_t getPrimitive() const { return mPrimitives.front(); }
@@ -107,6 +111,7 @@ private:
     std::vector<uint32_t> mPrimitives;
 
     bool mIsVisible = false;
+    bool mWasVisible = false;
 
     uint32_t mVAO, mVBO, mVBOI;
     uint32_t mQuery;

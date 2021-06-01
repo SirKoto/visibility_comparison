@@ -358,7 +358,6 @@ int mainLoop() {
 
     g_mesh->setInstances(g_gridPositions);
     if(g_mode == Mode::eOcclusionCulling) {
-        g_mesh->setBBInstances(g_gridPositions);
         g_queryObjects[0].resize(g_gridPositions.size());
         glGenQueries(g_gridPositions.size(), g_queryObjects[0].data());
         g_queryObjects[1].resize(g_gridPositions.size());
@@ -376,6 +375,11 @@ int mainLoop() {
     g_startTime = glfwGetTime();
     g_actualTime = g_startTime;
     g_endTime += g_startTime;
+    /*
+    g_startTime = 0;
+    g_actualTime = 8;
+    g_endTime = 10;
+    */
     while (!glfwWindowShouldClose(g_window))
     {
         glClear(GL_COLOR_BUFFER_BIT);
@@ -413,6 +417,7 @@ int mainLoop() {
             break;
         case Mode::eCHC:
             chc.executeCHCPP(g_cameraPosition, g_currentViewProjMatrix);
+
             break;
         default:
             assert(false);

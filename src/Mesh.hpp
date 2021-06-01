@@ -29,9 +29,11 @@ public:
     const glm::mat4& getModelMatrix() const { return mObjectMatrix; }
 
     void setInstances(const std::vector<glm::vec2>& xzOffsets);
-    void setBBInstances(const std::vector<glm::vec2>& xzOffsets);
 
-    void createBBoxVAOModelTransform(uint32_t vao, uint32_t vbo, uint32_t vboInstancing, glm::vec3 min, glm::vec3 max) const;
+    void createBBoxVAOModelTransform(uint32_t vao,
+                                     uint32_t vbo,
+                                     uint32_t vboInstancing,
+                                     glm::vec3 min, glm::vec3 max) const;
     
 private:
     struct VertexData
@@ -57,7 +59,6 @@ private:
 
     uint32_t mBBVAO;
     uint32_t mBBVBO;
-    uint32_t mBBInstanceBO;
 
     uint32_t mNumInstances = 1;
 
@@ -65,6 +66,10 @@ private:
     // Scale to put the object in a cube of basis at most 1x1
     void createObjectMatrix();
 
-    static void createBBoxVAO(uint32_t vao, uint32_t vbo, uint32_t vboInstancing, glm::vec3 min, glm::vec3 max);
+    static void createBBoxVAO(uint32_t vao,
+                              uint32_t vbo,
+                              uint32_t vboInstancing,
+                              glm::vec3 min, glm::vec3 max,
+                              bool initializeVboInstancing);
     
 };

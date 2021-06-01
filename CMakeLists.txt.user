@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.11.0, 2021-05-25T08:23:26. -->
+<!-- Written by QtCreator 4.11.0, 2021-06-01T15:14:40. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -184,7 +184,7 @@
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">visibility</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">CMakeProjectManager.CMakeRunConfiguration.visibility</value>
     <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">visibility</value>
-    <value type="QString" key="RunConfiguration.Arguments">2 -time=10 -mode=3</value>
+    <value type="QString" key="RunConfiguration.Arguments">4 -time=9 -mode=3</value>
     <value type="bool" key="RunConfiguration.Arguments.multi">false</value>
     <value type="QString" key="RunConfiguration.OverrideDebuggerStartup"></value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">false</value>
