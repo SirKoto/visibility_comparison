@@ -47,6 +47,8 @@ private:
                         Comparator> distanceQueue;
     std::queue<BVH_Node*> queryQueue;
 
+    std::vector<uint32_t> mRenderQueue;
+
     void traverseNode(const glm::vec3 &cameraPosition, BVH_Node* node);
     void pushToDistanceQueue(const glm::vec3 &cameraPosition, BVH_Node* node);
     static void pullUpVisibility(BVH_Node* node);

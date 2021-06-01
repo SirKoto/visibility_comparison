@@ -93,8 +93,10 @@ void ChcPP::drawBoxesAtDepth(uint32_t depth)
 void ChcPP::executeCHCPP(const glm::vec3 &cameraPosition, const glm::mat4 &cameraMatrix)
 {
     // we asume that all the queues are already empty
-
     pushToDistanceQueue(cameraPosition, mRoot.get());
+
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    glDepthMask(GL_FALSE);
 
     while(!distanceQueue.empty() || !queryQueue.empty()) {
         while(!queryQueue.empty()) {
@@ -135,14 +137,24 @@ void ChcPP::executeCHCPP(const glm::vec3 &cameraPosition, const glm::mat4 &camer
         issueQuery(v_queue.front());
         v_queue.pop();
     }
+    //glFinish();
+
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glDepthMask(GL_TRUE);
+    for(uint32_t i : mRenderQueue) {
+        mMesh->drawOnlyInstance(i);
+    }
+    mRenderQueue.clear();
+    glFinish();
 }
 
 void ChcPP::traverseNode(const glm::vec3 &cameraPosition, BVH_Node *node)
 {
     if(node->isLeaf()){
-        mMesh->drawOnlyInstance(node->getPrimitive());
+        mRenderQueue.push_back(node->getPrimitive());
     } else {
-        pushToDistanceQueue(cameraPosition, node);
+        pushToDistanceQueue(cameraPosition, node->getChild0());
+        pushToDistanceQueue(cameraPosition, node->getChild1());
         node->setVisible(false);
     }
 }
@@ -181,8 +193,6 @@ void ChcPP::issueQuery(BVH_Node *node)
         node->draw();
     }
     glEndQuery(GL_ANY_SAMPLES_PASSED_CONSERVATIVE);
-
-    // TODO: enable disable drawing
     queryQueue.push(node);
 }
 
@@ -199,6 +209,7 @@ void ChcPP::issueMultiQueries()
         issueQuery(i_queue.front());
         i_queue.pop();
     }
+    glFlush();
 }
 
 void ChcPP::queryPreviouslyInvisibleNode(BVH_Node *node)
