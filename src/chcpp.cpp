@@ -96,9 +96,6 @@ void ChcPP::executeCHCPP(const glm::vec3 &cameraPosition, const glm::mat4 &camer
     // we asume that all the queues are already empty
     pushToDistanceQueue(cameraPosition, mRoot.get());
 
-    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-    glDepthMask(GL_FALSE);
-
     while(!distanceQueue.empty() || !queryQueue.empty()) {
         while(!queryQueue.empty()) {
             if(isQueryFinished(queryQueue.front())) {
@@ -138,15 +135,10 @@ void ChcPP::executeCHCPP(const glm::vec3 &cameraPosition, const glm::mat4 &camer
         issueQuery(v_queue.front());
         v_queue.pop();
     }
-    //glFinish();
 
-    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-    glDepthMask(GL_TRUE);
-    for(uint32_t i : mRenderQueue) {
-        mMesh->drawOnlyInstance(i);
-    }
-    mRenderQueue.clear();
-    //glFinish();
+    // Ensure that the state is render at the end
+    setupStateRender();
+    flushRenderList();
 }
 
 void ChcPP::traverseNode(const glm::vec3 &cameraPosition, BVH_Node *node)
@@ -187,6 +179,8 @@ void ChcPP::queryIndividualNodes(BVH_Node *node)
 
 void ChcPP::issueQuery(BVH_Node *node)
 {
+    setupStateQuery();
+
     glBeginQuery(GL_ANY_SAMPLES_PASSED_CONSERVATIVE, node->getQuery());
     if(node->isLeaf()){
         mMesh->drawBBoxOnlyInstance(node->getPrimitive());
@@ -206,6 +200,8 @@ bool ChcPP::isQueryFinished(BVH_Node *node)
 
 void ChcPP::issueMultiQueries()
 {
+    flushRenderList();
+
     while(!i_queue.empty()) {
         issueQuery(i_queue.front());
         i_queue.pop();
@@ -229,6 +225,35 @@ void ChcPP::flipVisibilityNodes(BVH_Node *node)
     if(!node->isLeaf()) {
         flipVisibilityNodes(node->getChild0());
         flipVisibilityNodes(node->getChild1());
+    }
+}
+
+void ChcPP::flushRenderList()
+{
+    if(!mRenderQueue.empty()) {
+        setupStateRender();
+        for(uint32_t i : mRenderQueue) {
+            mMesh->drawOnlyInstance(i);
+        }
+        mRenderQueue.clear();
+    }
+}
+
+void ChcPP::setupStateRender()
+{
+    if(!mRenderStatusDrawEnabled){
+        mRenderStatusDrawEnabled = true;
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+        glDepthMask(GL_TRUE);
+    }
+}
+
+void ChcPP::setupStateQuery()
+{
+    if(mRenderStatusDrawEnabled){
+        mRenderStatusDrawEnabled = false;
+        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+        glDepthMask(GL_FALSE);
     }
 }
 

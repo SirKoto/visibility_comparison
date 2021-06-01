@@ -49,6 +49,8 @@ private:
 
     std::vector<uint32_t> mRenderQueue;
 
+    bool mRenderStatusDrawEnabled = true;
+
     void traverseNode(const glm::vec3 &cameraPosition, BVH_Node* node);
     void pushToDistanceQueue(const glm::vec3 &cameraPosition, BVH_Node* node);
     static void pullUpVisibility(BVH_Node* node);
@@ -60,7 +62,11 @@ private:
     void queryPreviouslyInvisibleNode(BVH_Node* node);
     void flipVisibilityNodes(BVH_Node* node);
 
-    static constexpr uint32_t MAX_BATCH_SIZE = 4;
+    void flushRenderList();
+    void setupStateRender();
+    void setupStateQuery();
+
+    static constexpr uint32_t MAX_BATCH_SIZE = 32;
 };
 
 
