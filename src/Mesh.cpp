@@ -144,19 +144,19 @@ void Mesh::createBBoxVAO(uint32_t vao, uint32_t vbo, uint32_t vboInstancing, glm
     glBindVertexArray(vao);
     // vertices
     float vertices[] = {
-        0.0f, 0.0f, 0.0f,
-        1.0f, 0.0f, 0.0f,
-        1.0f, 1.0f, 0.0f,
-        1.0f, 1.0f, 0.0f,
-        0.0f, 1.0f, 0.0f,
-        0.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f,
+        1.0f, 0.0f, 1.0f,
+        1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 1.0f,
+        0.0f, 1.0f, 1.0f,
+        0.0f, 0.0f, 1.0f,
 
-        0.0f, 0.0f,  1.0f,
-        1.0f, 0.0f,  1.0f,
-        1.0f, 1.0f,  1.0f,
-        1.0f, 1.0f,  1.0f,
-        0.0f, 1.0f,  1.0f,
-        0.0f, 0.0f,  1.0f,
+        0.0f, 0.0f, 0.0f,
+        1.0f, 1.0f, 0.0f,
+        1.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f,
+        1.0f, 1.0f, 0.0f,
+        0.0f, 0.0f, 0.0f,
 
         0.0f, 1.0f, 1.0f,
         0.0f, 1.0f, 0.0f,
@@ -166,11 +166,11 @@ void Mesh::createBBoxVAO(uint32_t vao, uint32_t vbo, uint32_t vboInstancing, glm
         0.0f, 1.0f, 1.0f,
 
         1.0f, 1.0f, 1.0f,
+        1.0f, 0.0f, 0.0f,
         1.0f, 1.0f, 0.0f,
         1.0f, 0.0f, 0.0f,
-        1.0f, 0.0f, 0.0f,
-        1.0f, 0.0f, 1.0f,
         1.0f, 1.0f, 1.0f,
+        1.0f, 0.0f, 1.0f,
 
         0.0f, 0.0f, 0.0f,
         1.0f, 0.0f, 0.0f,
@@ -180,11 +180,12 @@ void Mesh::createBBoxVAO(uint32_t vao, uint32_t vbo, uint32_t vboInstancing, glm
         0.0f, 0.0f, 0.0f,
 
         0.0f, 1.0f, 0.0f,
+        1.0f, 1.0f, 1.0f,
         1.0f, 1.0f, 0.0f,
         1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        0.0f, 1.0f, 1.0f,
         0.0f, 1.0f, 0.0f,
+        0.0f, 1.0f, 1.0f,
+
     };
 
     for(uint32_t i = 0; i < 36; ++i) {

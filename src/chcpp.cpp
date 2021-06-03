@@ -245,6 +245,7 @@ void ChcPP::setupStateRender()
         mRenderStatusDrawEnabled = true;
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
         glDepthMask(GL_TRUE);
+        glEnable(GL_CULL_FACE);
     }
 }
 
@@ -254,6 +255,7 @@ void ChcPP::setupStateQuery()
         mRenderStatusDrawEnabled = false;
         glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
         glDepthMask(GL_FALSE);
+        glDisable(GL_CULL_FACE);
     }
 }
 

@@ -26,7 +26,7 @@ uint32_t g_normProgram;
 
 std::vector<glm::vec2> g_gridPositions;
 std::vector<uint32_t> g_frustumCullingPos;
-std::vector<uint32_t> g_occlusionCullingPos;
+std::vector<uint8_t> g_occlusionCullingRendered;
 
 uint32_t g_gridResoulution;
 
@@ -45,8 +45,10 @@ glm::mat4 g_currentProjMatrix(1);
 glm::mat4 g_currentViewProjMatrix(1);
 glm::vec3 g_cameraPosition;
 
-std::array<std::vector<uint32_t>, 2> g_queryObjects;
-uint32_t g_currentBuffer = 0;
+std::vector<uint32_t> g_queryObjects;
+std::vector<double_t> g_occlusionLastVisible;
+const double_t DELTA_TIME_VISIBLE = 0.8;
+
 
 enum Mode {
     eUnoptimized = 0,
@@ -319,17 +321,45 @@ void updateFrustumCulling() {
     }
 }
 
-void launchOcclusionQueries(uint32_t toBuffer) {
+void launchOcclusionQueries() {
+
+    // draw new visible
+    uint32_t samplePassed;
+    for (uint32_t i = 0; i < g_gridPositions.size(); ++i) {
+        if (g_occlusionCullingRendered[i] == false) {
+            glGetQueryObjectuiv(g_queryObjects[i], GL_QUERY_RESULT, &samplePassed);
+            if (samplePassed) {
+                g_mesh->drawOnlyInstance(i);
+                g_occlusionLastVisible[i] = g_actualTime;
+                g_occlusionCullingRendered[i] = true;
+            }
+            else {
+                g_occlusionCullingRendered[i] = false;
+            }
+        }
+        else {
+            g_mesh->drawOnlyInstance(i);
+        }
+    }
+
+
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
     glDepthMask(GL_FALSE);
+    glDisable(GL_CULL_FACE);
+    // query all invisible
     for (uint32_t i = 0; i < g_gridPositions.size(); ++i) {
-        glBeginQuery(GL_ANY_SAMPLES_PASSED_CONSERVATIVE, g_queryObjects[toBuffer][i]);
-        g_mesh->drawBBoxOnlyInstance(i);
-        glEndQuery(GL_ANY_SAMPLES_PASSED_CONSERVATIVE);
+        if (g_occlusionCullingRendered[i] == false || 
+            (g_actualTime - g_occlusionLastVisible[i]) <= DELTA_TIME_VISIBLE) {
+            glBeginQuery(GL_ANY_SAMPLES_PASSED_CONSERVATIVE, g_queryObjects[i]);
+            g_mesh->drawBBoxOnlyInstance(i);
+            glEndQuery(GL_ANY_SAMPLES_PASSED_CONSERVATIVE);
+            g_occlusionCullingRendered[i] = false;
+        }
     }
     glFlush();
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glDepthMask(GL_TRUE);
+    glEnable(GL_CULL_FACE);
 }
 
 int mainLoop() {
@@ -350,6 +380,7 @@ int mainLoop() {
     }
 
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
     glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 
     glUseProgram(g_normProgram);
@@ -358,11 +389,11 @@ int mainLoop() {
 
     g_mesh->setInstances(g_gridPositions);
     if(g_mode == Mode::eOcclusionCulling) {
-        g_queryObjects[0].resize(g_gridPositions.size());
-        glGenQueries(g_gridPositions.size(), g_queryObjects[0].data());
-        g_queryObjects[1].resize(g_gridPositions.size());
-        glGenQueries(g_gridPositions.size(), g_queryObjects[1].data());
-        g_occlusionCullingPos.reserve(g_gridPositions.size());
+        g_queryObjects.resize(g_gridPositions.size());
+        glGenQueries(g_gridPositions.size(), g_queryObjects.data());
+        g_occlusionLastVisible.resize(g_gridPositions.size(), -10.0);
+        
+        g_occlusionCullingRendered.resize(g_gridPositions.size(), 0);
     }
 
     ChcPP chc;
@@ -398,21 +429,8 @@ int mainLoop() {
             }
             break;
         case Mode::eOcclusionCulling:
-            launchOcclusionQueries(g_currentBuffer);
-            g_occlusionCullingPos.clear();
-            g_currentBuffer = (g_currentBuffer + 1) % 2;
-            uint32_t samplePassed;
-            for (uint32_t i = 0; i < g_gridPositions.size(); ++i) {
-
-                glGetQueryObjectuiv(g_queryObjects[g_currentBuffer][i], GL_QUERY_RESULT, &samplePassed);
-                if(samplePassed) {
-                    g_occlusionCullingPos.push_back(i);
-                }
-            }
-
-            for(uint32_t i = 0; i < g_occlusionCullingPos.size(); ++i){
-                g_mesh->drawOnlyInstance(g_occlusionCullingPos[i]);
-            }
+            
+            launchOcclusionQueries();
 
             break;
         case Mode::eCHC:

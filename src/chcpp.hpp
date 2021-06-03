@@ -66,7 +66,7 @@ private:
     void setupStateRender();
     void setupStateQuery();
 
-    static constexpr uint32_t MAX_BATCH_SIZE = 32;
+    static constexpr uint32_t MAX_BATCH_SIZE = 20;
 };
 
 

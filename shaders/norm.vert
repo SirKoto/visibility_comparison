@@ -17,7 +17,26 @@ void main(){
     
     uv = iUv;
     normWorld = (V * M * vec4(iNorm, 0.0)).xyz;
-
+    /*
+    if(gl_VertexID  < 6){
+        normWorld = vec3(1,0,0);
+    }
+    else if(gl_VertexID < 2*6){
+        normWorld = vec3(1,1,0);
+    }
+    else if(gl_VertexID < 3*6){
+        normWorld = vec3(1,0,1);
+    }
+    else if(gl_VertexID < 4*6){
+        normWorld = vec3(0,1,0);
+    }
+    else if(gl_VertexID < 5*6){
+        normWorld = vec3(0,1,1);
+    }
+    else if(gl_VertexID < 6*6){
+        normWorld = vec3(0,0,1);
+    }
+    */
     vec4 posWorld = M * vec4(iPos, 1.0) + vec4(iOffsetXZ.x, 0, iOffsetXZ.y, 0);
     gl_Position = P * V * posWorld;
 }

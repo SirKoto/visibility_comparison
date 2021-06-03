@@ -8,6 +8,12 @@ else()
     set(CMAKE_CXX_FLAGS "-O3 -std=c++17")
 endif()
 
+
+if(MSVC)
+    set(CMAKE_CXX_FLAGS "/Ox /std:c++17")
+endif()
+
+
 set(SRC_FILES 
     src/main.cpp
     src/Mesh.cpp    src/Mesh.hpp
