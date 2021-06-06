@@ -41,10 +41,10 @@ inline bool testAABBoxInFrustum(const glm::vec3& min, const glm::vec3& max, cons
         }
     }
 
-    if((inZ || (negZ != 0 && negZ != 8)) && posX && negX && (posY != 8 && posY != 8)) {
+    if((inZ || (negZ != 0 && negZ != 8)) && posX && negX && (posY != 8 && negY != 8)) {
         return true;
     }
-    if((inZ || (negZ != 0 && negZ != 8)) && posY && negY && (posX != 8 && posX != 8)) {
+    if((inZ || (negZ != 0 && negZ != 8)) && posY && negY && (posX != 8 && negX != 8)) {
         return true;
     }
 
