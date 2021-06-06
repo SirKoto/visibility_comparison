@@ -14,6 +14,7 @@ public:
 
     void loadMesh(const char* fileName);
 
+    // Draw all instances associated to this mesh
     void draw() const;
 
     void drawOnlyInstance(uint32_t instance) const;
@@ -30,6 +31,8 @@ public:
 
     void setInstances(const std::vector<glm::vec2>& xzOffsets);
 
+    // Fill a vbo in a vao with a bounding box, such that is able to be rendered
+    // with the transform of this mesh
     void createBBoxVAOModelTransform(uint32_t vao,
                                      uint32_t vbo,
                                      uint32_t vboInstancing,

@@ -5,6 +5,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+
+// Enter min and max of the bounding box, and the transform to clip space
 inline bool testAABBoxInFrustum(const glm::vec3& min, const glm::vec3& max, const glm::mat4& MVP) {
 
     uint32_t posX = 0, negX = 0,

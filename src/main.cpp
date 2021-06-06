@@ -21,30 +21,36 @@ constexpr const char* SHADER_FRAGMENT = "./shaders/norm.frag";
 constexpr const char* SHADER_VERTEX =   "./shaders/norm.vert";
 
 
-GLFWwindow* g_window;
-uint32_t g_normProgram;
+GLFWwindow* g_window; // Window
 
+uint32_t g_normProgram; // GLSL program to shade
+
+// Positions and render lists for the different algorithms
 std::vector<glm::vec2> g_gridPositions;
 std::vector<uint32_t> g_frustumCullingPos;
 std::vector<uint8_t> g_occlusionCullingRendered;
 
-uint32_t g_gridResoulution;
+uint32_t g_gridResoulution; // Resolution of the grid in each dimension
 
+// Pre-allocated buffer to store the time and delta time
 std::vector<std::pair<double, double>> g_FramerateBuffer;
 std::string g_outFileName;
 
+// Global mesh, with single instance
 Mesh* g_mesh;
 
+// Execution and control timers
 double g_startTime = 0.0;
 double g_endTime = 0.0;
 double g_actualTime = 0.0;
 
-
+// Transformation matrices
 glm::mat4 g_currentViewMatrix(1);
 glm::mat4 g_currentProjMatrix(1);
 glm::mat4 g_currentViewProjMatrix(1);
-glm::vec3 g_cameraPosition;
+glm::vec3 g_cameraPosition; // camera pos
 
+// Buffer of queries
 std::vector<uint32_t> g_queryObjects;
 std::vector<double_t> g_occlusionLastVisible;
 const double_t DELTA_TIME_VISIBLE = 0.8;
@@ -57,9 +63,10 @@ enum Mode {
     eCHC = 3
 };
 
+// Actual algorithm
 Mode g_mode = Mode::eUnoptimized;
 
-
+// Points used to evaluate the B-spline
 const std::vector<glm::vec3> dirPoints = {
     {0,1,4},
     {0,1,2},
@@ -146,7 +153,7 @@ const std::vector<glm::vec3> dirPoints = {
 
 };
 
-// quadratic b-spline
+// quadratic b-spline. u in [0,1]
 glm::vec3 evalBSpline(const std::vector<glm::vec3>& points, double u) {
     double t = u * double(points.size() - 2);
     uint32_t idx = std::min(size_t(std::floor(t)), points.size() - 2);
@@ -262,6 +269,7 @@ uint32_t loadProgram(const std::string& vertexShaderPath,
     return prog;
 }
 
+// Generate the 2D grid with all the models
 void genGrid(uint32_t gridRes) {
     g_gridResoulution = gridRes;
 
@@ -274,7 +282,8 @@ void genGrid(uint32_t gridRes) {
     }
 }
 
-void updateCamera(){
+// Update the camera position, and matrices, according to the actual time
+void updateCamera() {
 
     double u = (g_actualTime - g_startTime) / (g_endTime - g_startTime);
 
@@ -300,8 +309,7 @@ void updateCamera(){
     glUniformMatrix4fv(2, 1, GL_FALSE, &g_currentProjMatrix[0][0]);
 }
 
-
-
+// Update the render list for the frustum culling
 void updateFrustumCulling() {
     g_frustumCullingPos.clear();
     g_frustumCullingPos.reserve(g_gridPositions.size());
@@ -321,8 +329,8 @@ void updateFrustumCulling() {
     }
 }
 
+// Launch and render using occlusion queries
 void launchOcclusionQueries() {
-
     // draw new visible
     uint32_t samplePassed;
     for (uint32_t i = 0; i < g_gridPositions.size(); ++i) {
@@ -386,8 +394,9 @@ int mainLoop() {
     glUseProgram(g_normProgram);
     glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(g_mesh->getModelMatrix()));
 
-
+    // Set all the instances into the mesh
     g_mesh->setInstances(g_gridPositions);
+
     if(g_mode == Mode::eOcclusionCulling) {
         g_queryObjects.resize(g_gridPositions.size());
         glGenQueries(g_gridPositions.size(), g_queryObjects.data());

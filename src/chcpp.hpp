@@ -20,10 +20,13 @@ public:
     void setMesh(const Mesh* mesh) { mMesh = mesh; }
     void setPositions(const std::vector<glm::vec2>* positions) { mPositions = positions; }
 
+    // Build the tree
     void buildBVH();
 
+    // Debug: draws all the boxes of the BVH at a certain depth
     void drawBoxesAtDepth(uint32_t depth);
 
+    // Run a single step of CHC++, and render
     void executeCHCPP(const glm::vec3& cameraPosition, const glm::mat4& cameraMatrix);
 
 private:
